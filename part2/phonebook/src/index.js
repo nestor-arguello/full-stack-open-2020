@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import axios from 'axios';
+import personService from './services/persons';
 
 import Filter from './components/Filter';
 import PersonForm from './components/PersonForm';
@@ -12,8 +12,8 @@ const App = () => {
   const [filterValue, setFilterValue] = useState('');
 
   useEffect(() => {
-    axios.get('http://localhost:3001/persons').then(response => {
-      setPersons(response.data);
+    personService.getAll().then(initialPersons => {
+      setPersons(initialPersons);
     });
   }, []);
 
@@ -31,15 +31,46 @@ const App = () => {
   const addNewPerson = event => {
     event.preventDefault();
 
-    const personExist = persons.find(
+    const existingPerson = persons.find(
       person => person.name.toLowerCase() === newPerson.name.toLowerCase()
     );
 
-    if (personExist) {
-      alert(`${newPerson.name} is already added to phonebook`);
+    if (existingPerson) {
+      if (newPerson.number === existingPerson.number) {
+        alert(`${newPerson.name} is already added to Phonebook`);
+      } else {
+        if (
+          window.confirm(
+            `${newPerson.name} is already added to Phonbook, replace the old number with a new one?`
+          )
+        ) {
+          const updatedPerson = { ...existingPerson, number: newPerson.number };
+
+          personService
+            .update(updatedPerson)
+            .then(
+              setPersons(
+                persons.map(person =>
+                  person.id === updatedPerson.id ? updatedPerson : person
+                )
+              )
+            );
+
+          setNewPerson({ name: '', number: '' });
+        }
+      }
     } else {
-      setPersons([...persons, newPerson]);
+      personService
+        .create(newPerson)
+        .then(personCreated => setPersons(persons.concat(personCreated)));
       setNewPerson({ name: '', number: '' });
+    }
+  };
+
+  const removePerson = personToRemove => () => {
+    if (window.confirm(`Delete ${personToRemove.name} ?`)) {
+      personService.remove(personToRemove);
+      setPersons(persons.filter(person => person.id !== personToRemove.id));
     }
   };
 
@@ -59,7 +90,11 @@ const App = () => {
 
       <h3>Numbers</h3>
 
-      <Persons persons={persons} filterValue={filterValue} />
+      <Persons
+        persons={persons}
+        filterValue={filterValue}
+        handleRemove={removePerson}
+      />
     </div>
   );
 };

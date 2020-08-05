@@ -1,21 +1,23 @@
 import React from 'react';
 
-const Person = ({ person }) => (
-  <div key={person.name}>
-    {person.name} {person.number}
-  </div>
-);
+import Person from './Person';
 
-const Persons = ({ persons, filterValue }) => (
-  <div>
-    {filterValue
-      ? persons
-          .filter(person =>
-            person.name.toLowerCase().includes(filterValue.toLowerCase())
-          )
-          .map(person => <Person key={person.name} person={person} />)
-      : persons.map(person => <Person key={person.name} person={person} />)}
-  </div>
-);
+const Persons = ({ persons, filterValue, handleRemove }) => {
+  const renderPerson = person => (
+    <Person key={person.name} person={person} handleRemove={handleRemove} />
+  );
+
+  return (
+    <div>
+      {filterValue
+        ? persons
+            .filter(person =>
+              person.name.toLowerCase().includes(filterValue.toLowerCase())
+            )
+            .map(renderPerson)
+        : persons.map(renderPerson)}
+    </div>
+  );
+};
 
 export default Persons;
